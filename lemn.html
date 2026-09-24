@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DirectConnect</title>
+<style>
+:root{
+  --bg:#070e01; --surface:#FFFFFF; --ink:#1E2A3A; --ink-soft:#5B6572;
+  --line:#DDE1DA; --accent:#E07A1F; --accent-ink:#7A3C0A;
+  --ok:#2F7A4D; --ok-bg:#E4F2E8; --warn:#B8860B; --warn-bg:#FBF1DC; --bad:#B23A2E; --bad-bg:#FBE7E4;
+  --radius:14px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151A21; --surface:#1E2530; --ink:#EDEFF2; --ink-soft:#9AA3AF;
+    --line:#2C333E; --accent:#F0904A; --accent-ink:#2A1608;
+    --ok:#4CAF75; --ok-bg:#183424; --warn:#E0AA3E; --warn-bg:#3A2E10; --bad:#E06758; --bad-bg:#3A1D19;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151A21; --surface:#1E2530; --ink:#EDEFF2; --ink-soft:#9AA3AF;
+  --line:#2C333E; --accent:#F0904A; --accent-ink:#2A1608;
+  --ok:#4CAF75; --ok-bg:#183424; --warn:#E0AA3E; --warn-bg:#3A2E10; --bad:#E06758; --bad-bg:#3A1D19;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial,sans-serif;height:100%;-webkit-font-smoothing:antialiased;}
+html,body{height:100%;}
+#app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;background:var(--bg);}
+a{color:inherit;}
+button{font-family:inherit;}
+
+/* Top bar */
+.topbar{position:sticky;top:0;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;background:var(--bg);z-index:5;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);}
+.topbar .back{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.topbar h1{font-size:17px;margin:0;font-weight:700;flex:1;}
+.demo-toggle{font-size:11px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:5px 10px;cursor:pointer;white-space:nowrap;}
+
+.screen{padding:18px 16px 90px;flex:1;}
+.screen.no-pad{padding:0 0 90px;}
+
+/* Landing */
+.hero{padding:56px 22px 30px;text-align:left;}
+.logo{font-weight:800;font-size:15px;letter-spacing:.02em;color:var(--accent-ink);background:var(--accent);display:inline-block;padding:4px 10px;border-radius:8px;margin-bottom:26px;}
+.hero h1{font-size:34px;line-height:1.12;margin:0 0 14px;font-weight:800;letter-spacing:-0.01em;}
+.hero p{font-size:15.5px;line-height:1.55;color:var(--ink-soft);margin:0 0 30px;max-width:38ch;}
+.cta-stack{display:flex;flex-direction:column;gap:10px;}
+.btn{display:block;text-align:center;padding:15px 18px;border-radius:12px;font-size:15.5px;font-weight:700;border:none;cursor:pointer;text-decoration:none;}
+.btn-primary{background:var(--ink);color:var(--bg);}
+.btn-accent{background:var(--accent);color:#fff;}
+.btn-outline{background:transparent;border:1.5px solid var(--line);color:var(--ink);}
+.btn-sm{padding:9px 14px;font-size:13.5px;border-radius:9px;}
+.btn-block{width:100%;}
+.landing-strip{display:flex;gap:8px;overflow-x:auto;padding:4px 22px 30px;scrollbar-width:none;}
+.landing-strip::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:8px 13px;font-size:12.5px;font-weight:600;color:var(--ink-soft);white-space:nowrap;}
+.login-link{text-align:center;padding:6px 22px 24px;font-size:13.5px;color:var(--ink-soft);}
+.login-link b{color:var(--ink);cursor:pointer;}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;}
+.field input,.field select,.field textarea{width:100%;padding:12px 13px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font-size:14.5px;font-family:inherit;}
+.field textarea{resize:vertical;min-height:70px;}
+.role-pick{display:flex;gap:10px;margin-bottom:18px;}
+.role-opt{flex:1;border:1.5px solid var(--line);border-radius:12px;padding:16px 10px;text-align:center;cursor:pointer;background:var(--surface);}
+.role-opt.active{border-color:var(--accent);background:var(--ok-bg);box-shadow:0 0 0 1px var(--accent) inset;}
+.role-opt .emoji{font-size:26px;display:block;margin-bottom:6px;}
+.role-opt div.t{font-weight:700;font-size:14px;}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:4px 9px;border-radius:20px;}
+.badge-ok{background:var(--ok-bg);color:var(--ok);}
+.badge-warn{background:var(--warn-bg);color:var(--warn);}
+.badge-bad{background:var(--bad-bg);color:var(--bad);}
+
+/* Verification */
+.vstep{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);}
+.vstep:last-child{border:none;}
+.vstep .dot{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;background:var(--line);color:var(--ink-soft);}
+.vstep.done .dot{background:var(--ok);color:#fff;}
+.vstep.current .dot{background:var(--accent);color:#fff;}
+.vstep .txt b{display:block;font-size:14px;}
+.vstep .txt span{font-size:12.5px;color:var(--ink-soft);}
+
+/* Dashboard grid */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px;cursor:pointer;}
+.stat-card .num{font-size:26px;font-weight:800;}
+.stat-card .lab{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+.section-h{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;}
+.section-h h2{font-size:15.5px;margin:0;font-weight:800;}
+.section-h .see{font-size:12.5px;color:var(--accent);font-weight:700;cursor:pointer;}
+
+/* Job card */
+.job-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:15px;margin-bottom:10px;cursor:pointer;}
+.job-card .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+.job-card h3{font-size:15px;margin:0 0 2px;font-weight:750;}
+.job-card .cat{font-size:12px;color:var(--ink-soft);}
+.match{font-size:12px;font-weight:800;color:var(--ok);background:var(--ok-bg);padding:4px 8px;border-radius:8px;white-space:nowrap;}
+.meta-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
+.meta{font-size:11.5px;background:var(--bg);border:1px solid var(--line);color:var(--ink-soft);padding:4px 8px;border-radius:8px;}
+.pay{font-weight:800;color:var(--ink);}
+
+/* Filters */
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none;}
+.filter-row::-webkit-scrollbar{display:none;}
+.f-chip{flex-shrink:0;border:1.5px solid var(--line);background:var(--surface);border-radius:20px;padding:7px 13px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.f-chip.active{background:var(--ink);color:var(--bg);border-color:var(--ink);}
+
+/* Duration chips */
+.dur-row{display:flex;gap:8px;flex-wrap:wrap;}
+.dur-chip{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;cursor:pointer;background:var(--surface);flex:1;text-align:center;min-width:80px;}
+.dur-chip.active{border-color:var(--accent);background:var(--accent);color:#fff;}
+
+/* Job detail */
+.detail-hero{padding-bottom:6px;}
+.detail-hero h2{font-size:20px;margin:2px 0 6px;font-weight:800;}
+.owner-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);margin:10px 0 16px;}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.dgi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;}
+.dgi .l{font-size:11px;color:var(--ink-soft);font-weight:700;margin-bottom:3px;}
+.dgi .v{font-size:14.5px;font-weight:700;}
+.bottom-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;z-index:10;}
+
+/* Bottom nav */
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:1px solid var(--line);display:flex;padding:8px 4px calc(6px + env(safe-area-inset-bottom,0px));z-index:10;}
+.tab{flex:1;text-align:center;padding:6px 2px;cursor:pointer;color:var(--ink-soft);font-size:10.5px;font-weight:700;}
+.tab .ic{font-size:19px;display:block;margin-bottom:2px;}
+.tab.active{color:var(--accent);}
+
+/* Chat */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 130px);}
+.msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.msg{max-width:75%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.4;}
+.msg.in{background:var(--surface);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px;}
+.msg.out{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+.chat-input{display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--surface);}
+.chat-input input{flex:1;border:1.5px solid var(--line);border-radius:20px;padding:10px 15px;background:var(--bg);color:var(--ink);font-size:14px;}
+.chat-input button{background:var(--accent);color:#fff;border:none;width:40px;height:40px;border-radius:50%;font-size:16px;cursor:pointer;flex-shrink:0;}
+
+.empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:13.5px;}
+.profile-card{display:flex;align-items:center;gap:12px;padding:6px 0 18px;}
+.avatar{width:54px;height:54px;border-radius:50%;background:var(--ink);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;flex-shrink:0;}
+.subtle{color:var(--ink-soft);font-size:12.5px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const state = {
+  view: 'landing',
+  role: null, // 'worker' | 'owner'
+  verification: 'unverified', // unverified -> pending -> verified
+  name: '', phone: '',
+  activeJobId: null,
+  jobFilter: 'all',
+  experience: 'none', // 'none' | 'some'
+  age: '18plus', // '18plus' | 'under18'
+  regStep: 0,
+  postDuration: '1 Day',
+  applied: new Set(),
+  navFrom: []
+};
+
+const JOBS = [
+ {id:1,heavy:false,cat:'Catering & Events',icon:'🍽️',title:'Catering Servers Required',workers:8,date:'28 Sep',duration:'1 Day',hours:'5:00 PM – 11:00 PM',location:'Coimbatore',pay:800,extra:'Wedding Catering',exp:'Not required',skills:'Serving, basic customer handling',desc:'8 people required for wedding catering service. Food serving and basic event assistance.',verified:true,match:94},
+ {id:2,heavy:true,cat:'Loading & Unloading',icon:'📦',title:'Goods Loading & Unloading Workers',workers:5,date:'26 Sep',duration:'2 Days',hours:'9:00 AM – 6:00 PM',location:'Coimbatore',pay:900,extra:'Boxes, general goods',exp:'Not required',skills:'Physical stamina, careful handling',desc:'Loading/unloading boxes from vehicle to warehouse.',verified:true,match:88},
+ {id:3,heavy:true,cat:'Construction Helper',icon:'🏗️',title:'Construction Site Helpers',workers:6,date:'30 Sep',duration:'3–7 Days',hours:'8:00 AM – 5:00 PM',location:'Peelamedu, Coimbatore',pay:700,extra:'Residential site',exp:'Preferred',skills:'Basic masonry support, lifting',desc:'Helpers needed for a residential construction site for the week.',verified:true,match:81},
+ {id:4,heavy:true,cat:'Moving & Shifting',icon:'🚚',title:'House Shifting Helpers',workers:3,date:'27 Sep',duration:'1 Day',hours:'10:00 AM – 4:00 PM',location:'RS Puram, Coimbatore',pay:850,extra:'2BHK apartment',exp:'Not required',skills:'Packing, careful lifting',desc:'Help pack and move furniture from a 2BHK apartment to a new location.',verified:false,match:76},
+ {id:5,heavy:true,cat:'Event Setup & Decoration',icon:'🎪',title:'Stage & Decor Setup Crew',workers:4,date:'29 Sep',duration:'1 Day',hours:'2:00 PM – 8:00 PM',location:'Saibaba Colony, Coimbatore',pay:750,extra:'Corporate event',exp:'Preferred',skills:'Basic rigging, decoration setup',desc:'Setting up stage, lighting frames and decor for a corporate event.',verified:true,match:72},
+ {id:6,heavy:false,cat:'Cleaning',icon:'🧹',title:'Deep Cleaning Crew Needed',workers:4,date:'25 Sep',duration:'1 Day',hours:'8:00 AM – 1:00 PM',location:'Gandhipuram, Coimbatore',pay:650,extra:'Office space',exp:'Not required',skills:'Deep cleaning, floor care',desc:'Deep cleaning of a 3000 sq.ft office space before an event.',verified:true,match:69},
+];
+
+const CATS = ['All','Catering & Events','Loading & Unloading','Construction Helper','Moving & Shifting','Cleaning','Event Setup & Decoration'];
+
+function go(view, extra){ state.navFrom.push(state.view); state.view = view; if(extra) Object.assign(state, extra); render(); window.scrollTo(0,0);}
+function back(){ state.view = state.navFrom.pop() || 'landing'; render(); window.scrollTo(0,0);}
+
+function topbar(title, showToggle){
+  return `<div class="topbar">
+    ${state.navFrom.length? `<div class="back" onclick="back()">←</div>` : `<div style="width:34px"></div>`}
+    <h1>${title}</h1>
+    ${showToggle? `<div class="demo-toggle" onclick="toggleRole()">Demo: ${state.role==='owner'?'Owner':'Worker'} view</div>`:''}
+  </div>`;
+}
+
+function toggleRole(){
+  state.role = state.role === 'owner' ? 'worker' : 'owner';
+  render();
+}
+
+function tabbar(active){
+  const worker = state.role !== 'owner';
+  const tabs = worker
+    ? [['dashboard','🏠','Home'],['jobs','🔍','Jobs'],['chat','💬','Chat'],['profile','👤','Profile']]
+    : [['dashboard','🏠','Home'],['postjob','➕','Post Job'],['chat','💬','Chat'],['profile','👤','Profile']];
+  return `<div class="tabbar">${tabs.map(([v,ic,lab])=>`
+    <div class="tab ${active===v?'active':''}" onclick="state.navFrom=[];go('${v}')"><span class="ic">${ic}</span>${lab}</div>`).join('')}</div>`;
+}
+
+function verBadge(v){
+  if(v==='verified') return `<span class="badge badge-ok">✓ Verified</span>`;
+  if(v==='pending') return `<span class="badge badge-warn">⏳ Verification Pending</span>`;
+  return `<span class="badge badge-bad">Unverified</span>`;
+}
+
+/* ---------- VIEWS ---------- */
+function viewLanding(){
+  return `
+  <div class="hero">
+    <span class="logo">DirectConnect</span>
+    <h1>Find Work. Hire Workers. Connect Directly.</h1>
+    <p>Discover verified short-term jobs and workers near you. From catering and loading to event work and daily labour — connect directly without agents or unnecessary commission.</p>
+    <div class="cta-stack">
+      <button class="btn btn-accent" onclick="go('register',{role:'worker'})">I'm looking for work</button>
+      <button class="btn btn-outline" onclick="go('register',{role:'owner'})">I'm hiring workers</button>
+    </div>
+  </div>
+  <div class="landing-strip">
+    ${['🍽️ Catering','📦 Loading','🏗️ Construction','🚚 Moving','🧹 Cleaning','🌾 Farm Work','🛍️ Warehouse','🎪 Events','🏠 Household'].map(c=>`<span class="chip">${c}</span>`).join('')}
+  </div>
+  <div class="login-link">Already registered? <b onclick="go('login')">Log in</b></div>
+  `;
+}
+
+function viewLogin(){
+  return `${topbar('Log in')}
+  <div class="screen">
+    <div class="field"><label>Phone number</label><input placeholder="+91 98xxxxxxxx" id="lp"></div>
+    <div class="field"><label>Password / OTP</label><input placeholder="••••••" type="password"></div>
+    <button class="btn btn-accent btn-block" onclick="mockLogin()">Log in</button>
+    <p class="subtle" style="text-align:center;margin-top:14px;">No account? <b style="color:var(--accent);cursor:pointer" onclick="go('register')">Register</b></p>
+  </div>`;
+}
+function mockLogin(){ state.role = state.role||'worker'; state.name = state.name||'Ravi Kumar'; state.verification='verified'; state.navFrom=[]; go('dashboard'); }
+
+function viewRegister(){
+  const worker = state.role !== 'owner';
+  return `${topbar('Create account')}
+  <div class="screen">
+    <div class="role-pick">
+      <div class="role-opt ${worker?'active':''}" onclick="state.role='worker';render()"><span class="emoji">🧰</span><div class="t">I'm a Worker</div></div>
+      <div class="role-opt ${!worker?'active':''}" onclick="state.role='owner';render()"><span class="emoji">🏢</span><div class="t">I'm an Owner</div></div>
+    </div>
+    <div class="field"><label>Full name</label><input placeholder="Your name" id="rname"></div>
+    <div class="field"><label>Phone number</label><input placeholder="+91 98xxxxxxxx"></div>
+    <div class="field"><label>Email (optional)</label><input placeholder="you@example.com"></div>
+    <div class="field"><label>Location</label><input placeholder="City / area" value="Coimbatore"></div>
+    <div class="field"><label>Profile photo</label><input type="file"></div>
+    ${worker? `
+    <div class="field"><label>Age</label>
+      <div class="dur-row">
+        <div class="dur-chip ${state.age==='18plus'?'active':''}" onclick="state.age='18plus';render()">18 or older</div>
+        <div class="dur-chip ${state.age==='under18'?'active':''}" onclick="state.age='under18';render()">Under 18</div>
+      </div>
+      <p class="subtle" style="margin:6px 0 0">Under 18? You'll only see light-duty work like catering and cleaning — heavy or hazardous jobs (driving, loading, construction, moving) are 18+ only.</p>
+    </div>
+    <div class="field"><label>Skills</label><input placeholder="e.g. Serving, loading, cleaning"></div>
+    <div class="field"><label>Experience</label>
+      <div class="dur-row">
+        <div class="dur-chip ${state.experience==='none'?'active':''}" onclick="state.experience='none';render()">No experience</div>
+        <div class="dur-chip ${state.experience==='some'?'active':''}" onclick="state.experience='some';render()">Some / experienced</div>
+      </div>
+      <p class="subtle" style="margin:6px 0 0">New to work? You'll start with 1‑day jobs to build a track record, then unlock longer ones.</p>
+    </div>
+    ` : `
+    <div class="field"><label>Business / organization name (optional)</label><input placeholder="e.g. Sri Venkateshwara Caterers"></div>
+    `}
+    <button class="btn btn-accent btn-block" onclick="finishRegister()">Continue to verification</button>
+  </div>`;
+}
+function submitAadhaar(){
+  const el = document.getElementById('aadhaarNum');
+  const digits = el ? el.value.replace(/\D/g,'') : '';
+  if(digits.length !== 12){ alert('Enter a valid 12-digit Aadhaar number.'); return; }
+  state.verification = 'pending';
+  render();
+}
+function finishRegister(){
+  const nameEl = document.getElementById('rname');
+  state.name = (nameEl && nameEl.value.trim()) || (state.role==='owner'?'Meena Textiles':'Ravi Kumar');
+  state.verification = 'unverified';
+  go('verify');
+}
+
+function viewVerify(){
+  const v = state.verification;
+  return `${topbar('Verification')}
+  <div class="screen">
+    <div class="card">
+      <p style="margin:0 0 4px;font-size:13.5px;color:var(--ink-soft)">Current status</p>
+      ${verBadge(v)}
+    </div>
+    <div class="card">
+      <div class="vstep ${v!=='unverified'?'done':'current'}">
+        <div class="dot">${v!=='unverified'?'✓':'1'}</div>
+        <div class="txt"><b>Submit Aadhaar details</b><span>Aadhaar is the only accepted document for verification</span></div>
+      </div>
+      <div class="vstep ${v==='pending'?'current':v==='verified'?'done':''}">
+        <div class="dot">${v==='verified'?'✓':'2'}</div>
+        <div class="txt"><b>Under review</b><span>Manual document check by DirectConnect team</span></div>
+      </div>
+      <div class="vstep ${v==='verified'?'done current':''}">
+        <div class="dot">${v==='verified'?'✓':'3'}</div>
+        <div class="txt"><b>Verified ✓</b><span>Your profile is marked verified to other users</span></div>
+      </div>
+    </div>
+    ${v==='unverified'? `
+    <div class="card">
+      <div class="field"><label>Aadhaar number</label><input placeholder="XXXX XXXX XXXX" maxlength="14" id="aadhaarNum"></div>
+      <div class="field" style="margin-bottom:0"><label>Upload Aadhaar (front & back)</label><input type="file"></div>
+    </div>`:''}
+    <p class="subtle">DirectConnect verification is a manual document check by our team, confirming the Aadhaar you submit matches your profile. This is <b>not</b> an official government (UIDAI) verification unless explicitly stated as such.</p>
+    ${v==='unverified'? `<button class="btn btn-accent btn-block" onclick="submitAadhaar()">Submit Aadhaar for verification</button>`
+     : v==='pending'? `<button class="btn btn-outline btn-block" onclick="state.verification='verified';render()">Simulate review complete</button>`
+     : `<button class="btn btn-accent btn-block" onclick="state.navFrom=[];go('dashboard')">Go to dashboard</button>`}
+    ${v!=='verified'? `<button class="btn btn-outline btn-block" style="margin-top:10px" onclick="state.navFrom=[];go('dashboard')">Skip for now</button>`:''}
+  </div>`;
+}
+
+function viewDashboard(){
+  const worker = state.role !== 'owner';
+  const stats = worker
+    ? [['jobs','12','Recommended Jobs'],['jobs','8','Nearby Jobs'],['jobs','3','Applied Jobs'],['jobs','1','Accepted Jobs'],['jobs','5','Completed Jobs']]
+    : [['postjob','4','Active Requirements'],['jobs','17','Workers Applied'],['chat','6','Workers Contacted'],['jobs','9','Completed Jobs']];
+  return `${topbar('DirectConnect', true)}
+  <div class="screen">
+    <div class="profile-card">
+      <div class="avatar">${(state.name||'U').charAt(0)}</div>
+      <div>
+        <div style="font-weight:800;font-size:16px">${state.name || (worker?'Ravi Kumar':'Meena Textiles')}</div>
+        ${verBadge(state.verification)}
+      </div>
+    </div>
+    <div class="section-h"><h2>${worker? 'Your activity':'Your requirements'}</h2></div>
+    <div class="grid2">
+      ${stats.slice(0,4).map(([v,n,l])=>`<div class="stat-card" onclick="go('${v}')"><div class="num">${n}</div><div class="lab">${l}</div></div>`).join('')}
+    </div>
+    ${stats[4]? `<div class="stat-card" style="margin-bottom:18px" onclick="go('${stats[4][0]}')"><div class="num">${stats[4][1]}</div><div class="lab">${stats[4][2]}</div></div>`:''}
+
+    <div class="section-h"><h2>${worker?'Top matches near you':'Recent applicants'}</h2><span class="see" onclick="go('jobs')">See all</span></div>
+    ${(()=>{ let l=JOBS; if(worker&&state.experience==='none') l=l.filter(j=>j.duration==='1 Day'); if(worker&&state.age==='under18') l=l.filter(j=>!j.heavy); return l.slice(0,3).map(jobCard).join(''); })()}
+  </div>
+  ${tabbar('dashboard')}`;
+}
+
+function jobCard(j){
+  return `<div class="job-card" onclick="go('jobdetail',{activeJobId:${j.id}})">
+    <div class="top">
+      <div><h3>${j.icon} ${j.title}</h3><div class="cat">${j.cat}</div></div>
+      <div class="match">${j.match}% Match</div>
+    </div>
+    <div class="meta-row">
+      <span class="meta">📍 ${j.location}</span>
+      <span class="meta">📅 ${j.date}</span>
+      <span class="meta">⏱️ ${j.duration}</span>
+      <span class="meta">👥 ${j.workers}</span>
+      <span class="meta pay">₹${j.pay}/day</span>
+    </div>
+    ${j.verified? `<div style="margin-top:8px;display:flex;gap:6px"><span class="badge badge-ok">✓ Verified Owner</span>${j.heavy?`<span class="badge badge-bad">18+ only</span>`:''}</div>` : j.heavy? `<div style="margin-top:8px"><span class="badge badge-bad">18+ only</span></div>`:''}
+  </div>`;
+}
+
+function viewJobs(){
+  const worker = state.role!=='owner';
+  const noExp = worker && state.experience==='none';
+  const under18 = worker && state.age==='under18';
+  let list = state.jobFilter==='All'||state.jobFilter==='all' ? JOBS : JOBS.filter(j=>j.cat===state.jobFilter);
+  if(noExp) list = list.filter(j=>j.duration==='1 Day');
+  if(under18) list = list.filter(j=>!j.heavy);
+  return `${topbar('Browse Jobs')}
+  <div class="screen">
+    ${under18? `<div class="card" style="background:var(--bad-bg);border-color:transparent"><span class="badge badge-bad">Under 18</span><p style="margin:8px 0 0;font-size:13px">Heavy or hazardous work (driving, loading, construction, moving) is hidden for your safety. Only light-duty jobs like catering and cleaning are shown.</p></div>`:''}
+    ${noExp? `<div class="card" style="background:var(--warn-bg);border-color:transparent"><span class="badge badge-warn">New worker</span><p style="margin:8px 0 0;font-size:13px">Showing 1‑day jobs only. Complete a few to unlock longer 2–7 day and 7+ day work.</p></div>`:''}
+    <div class="filter-row">
+      ${CATS.map(c=>`<div class="f-chip ${((state.jobFilter==='all'&&c==='All')||state.jobFilter===c)?'active':''}" onclick="state.jobFilter='${c}';render()">${c}</div>`).join('')}
+    </div>
+    ${list.length? list.map(jobCard).join('') : `<div class="empty">No jobs in this category right now.</div>`}
+  </div>
+  ${tabbar('jobs')}`;
+}
+
+function viewJobDetail(){
+  const j = JOBS.find(x=>x.id===state.activeJobId) || JOBS[0];
+  const applied = state.applied.has(j.id);
+  return `${topbar('Job Details')}
+  <div class="screen">
+    <div class="detail-hero">
+      <span class="badge badge-ok">${j.match}% Match</span>
+      <h2>${j.icon} ${j.title}</h2>
+      <div class="cat">${j.cat}</div>
+      <div class="owner-row">${j.verified? `<span class="badge badge-ok">✓ Verified Owner</span>`:`<span class="badge badge-bad">Unverified Owner</span>`}</div>
+    </div>
+    <div class="detail-grid">
+      <div class="dgi"><div class="l">DATE</div><div class="v">📅 ${j.date}</div></div>
+      <div class="dgi"><div class="l">DURATION</div><div class="v">⏱️ ${j.duration}</div></div>
+      <div class="dgi"><div class="l">WORKING HOURS</div><div class="v">${j.hours}</div></div>
+      <div class="dgi"><div class="l">WORKERS NEEDED</div><div class="v">👥 ${j.workers}</div></div>
+      <div class="dgi"><div class="l">LOCATION</div><div class="v">📍 ${j.location}</div></div>
+      <div class="dgi"><div class="l">PAYMENT</div><div class="v">₹${j.pay}/day</div></div>
+    </div>
+    <div class="card">
+      <div class="field"><label>Experience</label>${j.exp}</div>
+      <div class="field"><label>Skills</label>${j.skills}</div>
+      <div class="field" style="margin-bottom:0"><label>Description</label>${j.desc}</div>
+    </div>
+  </div>
+  <div class="bottom-bar">
+    ${applied
+      ? `<button class="btn btn-outline btn-block" disabled>✓ Applied — Awaiting response</button>`
+      : `<button class="btn btn-accent" style="flex:1" onclick="applyJob(${j.id})">Apply now</button>
+         <button class="btn btn-outline" style="flex:1" onclick="go('chat')">Message owner</button>`}
+  </div>`;
+}
+function applyJob(id){ state.applied.add(id); render(); }
+
+function viewPostJob(){
+  const durations = ['1 Day','2 Days','3–7 Days','More than 7 Days'];
+  return `${topbar('Post a requirement')}
+  <div class="screen">
+    <div class="field"><label>Job title</label><input placeholder="e.g. Catering Servers Required"></div>
+    <div class="field"><label>Category</label>
+      <select>${CATS.filter(c=>c!=='All').map(c=>`<option>${c}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Workers required</label><input type="number" placeholder="e.g. 8"></div>
+    <div class="field"><label>Date</label><input placeholder="e.g. 28 September"></div>
+    <div class="field">
+      <label>Duration</label>
+      <div class="dur-row">
+        ${durations.map(d=>`<div class="dur-chip ${state.postDuration===d?'active':''}" onclick="state.postDuration='${d}';render()">${d}</div>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Working hours</label><input placeholder="e.g. 5:00 PM – 11:00 PM"></div>
+    <div class="field"><label>Location</label><input placeholder="e.g. Coimbatore" value="Coimbatore"></div>
+    <div class="field"><label>Payment per day</label><input placeholder="e.g. ₹800/day"></div>
+    <div class="field"><label>Experience required</label><input placeholder="e.g. Not required"></div>
+    <div class="field"><label>Skills needed</label><input placeholder="e.g. Serving, basic customer handling"></div>
+    <div class="field"><label>Description</label><textarea placeholder="Describe the work..."></textarea></div>
+    <button class="btn btn-accent btn-block" onclick="postJobDone()">Post requirement</button>
+  </div>`;
+}
+function postJobDone(){ state.navFrom=[]; go('dashboard'); }
+
+function viewChat(){
+  return `${topbar('Chat')}
+  <div class="chat-wrap">
+    <div class="msgs" id="msgs">
+      <div class="msg in">Hi! Is the wedding catering job on 28 Sep still open?</div>
+      <div class="msg out">Yes, still need 3 more servers. Can you make it 5 PM at the venue in Coimbatore?</div>
+      <div class="msg in">Yes that works for me. I have 2 years of serving experience.</div>
+      <div class="msg out">Great, you're confirmed. See you at 4:45 PM for briefing.</div>
+    </div>
+    <div class="chat-input">
+      <input id="chatIn" placeholder="Type a message...">
+      <button onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+  ${tabbar('chat')}`;
+}
+function sendMsg(){
+  const inp = document.getElementById('chatIn');
+  if(!inp || !inp.value.trim()) return;
+  const m = document.getElementById('msgs');
+  const div = document.createElement('div');
+  div.className='msg out'; div.textContent = inp.value.trim();
+  m.appendChild(div); inp.value=''; m.scrollTop = m.scrollHeight;
+}
+
+function viewProfile(){
+  const worker = state.role !== 'owner';
+  return `${topbar('Profile', true)}
+  <div class="screen">
+    <div class="profile-card">
+      <div class="avatar">${(state.name||'U').charAt(0)}</div>
+      <div>
+        <div style="font-weight:800;font-size:17px">${state.name || (worker?'Ravi Kumar':'Meena Textiles')}</div>
+        <div class="subtle">${worker?'Worker':'Owner'} · Coimbatore</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="field"><label>Verification status</label>${verBadge(state.verification)}</div>
+      ${state.verification!=='verified'? `<button class="btn btn-outline btn-block" onclick="go('verify')">Continue verification</button>`:''}
+    </div>
+    <div class="card">
+      ${worker? `
+        <div class="field"><label>Skills</label>Serving, basic customer handling, loading</div>
+        <div class="field" style="margin-bottom:0"><label>Experience</label>2 years</div>
+      ` : `
+        <div class="field"><label>Business name</label>Meena Textiles</div>
+        <div class="field" style="margin-bottom:0"><label>Requirements posted</label>4 active</div>
+      `}
+    </div>
+    <button class="btn btn-outline btn-block" onclick="state.navFrom=[];state.view='landing';state.role=null;state.verification='unverified';render()">Log out</button>
+  </div>
+  ${tabbar('profile')}`;
+}
+
+/* ---------- ROUTER ---------- */
+function render(){
+  const app = document.getElementById('app');
+  const views = {
+    landing: viewLanding, login: viewLogin, register: viewRegister, verify: viewVerify,
+    dashboard: viewDashboard, jobs: viewJobs, jobdetail: viewJobDetail,
+    postjob: viewPostJob, chat: viewChat, profile: viewProfile
+  };
+  app.innerHTML = (views[state.view] || viewLanding)();
+}
+render();
+</script>
+</body>
+</html>
